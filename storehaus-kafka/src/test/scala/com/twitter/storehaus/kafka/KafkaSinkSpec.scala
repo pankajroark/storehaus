@@ -23,13 +23,17 @@ import org.scalatest.{Matchers, WordSpec, BeforeAndAfterAll}
 
 import scala.collection.JavaConverters._
 
+object KafkaSinkSpec {
+  private val mut = List(1)
+}
+
 class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
+  import KafkaSinkSpec._
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
   private val pollTimeoutMs = 60000
 
-  private val mut = List(1)
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
