@@ -69,7 +69,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       import com.twitter.bijection.StringCodec.utf8
-      for (_ <- 1 to 100) {
+      for (i <- 1 to 100) {
         println(s"run $i")
         val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
             topic, Seq(ktu.brokerAddress))
