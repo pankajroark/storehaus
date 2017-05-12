@@ -69,36 +69,40 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       import com.twitter.bijection.StringCodec.utf8
-      val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-          topic, Seq(ktu.brokerAddress))
-        .convert[String, String](utf8.toFunction)
+      for (_ <- 1 to 100) {
+        val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+            topic, Seq(ktu.brokerAddress))
+          .convert[String, String](utf8.toFunction)
 
-      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-      Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
-      records should have size 10
-      records.zip(1 to 10).foreach { case (record, expectedValue) =>
-        record.key() shouldBe "key"
-        record.value() shouldBe expectedValue.toString
+        Await.result(Future.collect(futures))
+        val records = consumer.poll(pollTimeoutMs).asScala
+        records should have size 10
+        records.zip(1 to 10).foreach { case (record, expectedValue) =>
+          record.key() shouldBe "key"
+          record.value() shouldBe expectedValue.toString
+        }
       }
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
-      val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
-          topic, Seq(ktu.brokerAddress))
-        .filter { case (k, v) => v.toInt % 2 == 0 }
+      for (_ <- 1 to 100) {
+        val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
+            topic, Seq(ktu.brokerAddress))
+          .filter { case (k, v) => v.toInt % 2 == 0 }
 
-      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-      Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
-      records.size shouldBe 5
-      records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
-        record.key() shouldBe "key"
-        record.value() shouldBe expectedValue.toString
+        Await.result(Future.collect(futures))
+        val records = consumer.poll(pollTimeoutMs).asScala
+        records.size shouldBe 5
+        records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
+          record.key() shouldBe "key"
+          record.value() shouldBe expectedValue.toString
+        }
       }
     }
   }
