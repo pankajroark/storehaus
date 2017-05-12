@@ -262,7 +262,6 @@ lazy val storehausKafka = module("kafka").settings(
     "org.apache.zookeeper" % "zookeeper" % "3.4.8" % "test",
     "org.apache.kafka" %% "kafka" % "0.10.1.1" % "test"
   ),
-  parallelExecution in Test := false,
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
 ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile")
