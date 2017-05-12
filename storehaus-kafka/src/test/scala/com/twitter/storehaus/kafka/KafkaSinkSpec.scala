@@ -70,7 +70,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       import com.twitter.bijection.StringCodec.utf8
       for (i <- 1 to 100) {
-        println(s"run $i")
+        println(s"run converted $i")
         val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
             topic, Seq(ktu.brokerAddress))
           .convert[String, String](utf8.toFunction)
@@ -91,7 +91,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       for (i <- 1 to 100) {
-        println(s"run $i")
+        println(s"run filtered $i")
         val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
             topic, Seq(ktu.brokerAddress))
           .filter { case (k, v) => v.toInt % 2 == 0 }
