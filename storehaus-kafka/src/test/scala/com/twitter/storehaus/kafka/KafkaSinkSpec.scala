@@ -29,6 +29,8 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   private var consumer: KafkaConsumer[String, String] = _
   private val pollTimeoutMs = 60000
 
+  private val mut = List(1)
+
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
     ktu.setup()
@@ -48,7 +50,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   "KafkaSink" should {
     "write messages to a kafka topic" in {
-      this.synchronized {
+      mut.synchronized {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
@@ -67,7 +69,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       }
     }
     "write messages to a kafka topic after having been converted" in {
-      this.synchronized {
+      mut.synchronized {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
@@ -91,7 +93,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       }
     }
     "write messages to a kafka topic after having been filtered" in {
-      this.synchronized {
+      mut.synchronized {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
