@@ -53,25 +53,9 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
   }
 
-  private def readAllRecords(): List[ConsumerRecord[String, String]] = {
-    var cont = true
-    var allRecords = List.empty[ConsumerRecord[String, String]]
-    while (cont) {
-      val records = consumer.poll(pollTimeoutMs).asScala
-      allRecords = allRecords ++ records.toList
-      println(records.size)
-      cont = records.nonEmpty
-    }
-    println(s" all records size ${allRecords.size}")
-    allRecords
-  }
-
-  private def tryReadAtLeastNRecords(n: Int): List[ConsumerRecord[String, String]] = {
-    var allRecords = List.empty[ConsumerRecord[String, String]]
-    for (i <- 1 to pollTries) {
-      if (i > 1) {
-        println("did not get enough records, trying again")
-      }
+  private def tryReadAtLeastNRecords(n: Int): Array[ConsumerRecord[String, String]] = {
+    var allRecords = Array.empty[ConsumerRecord[String, String]]
+    for (_ <- 1 to pollTries) {
       val records = consumer.poll(pollTimeoutMs).asScala
       allRecords = allRecords ++ records.toList
       if (allRecords.size >= n) {
@@ -83,7 +67,6 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   "KafkaSink" should {
     "write messages to a kafka topic" in {
-      mut.synchronized {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
@@ -99,60 +82,43 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
-      }
     }
     "write messages to a kafka topic after having been converted" in {
-      mut.synchronized {
-        println(s"started convert: thread id ${Thread.currentThread.getId()}")
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
       import com.twitter.bijection.StringCodec.utf8
-      for (i <- 1 to 100) {
-        println(s"run converted $i")
-        val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-            topic, Seq(ktu.brokerAddress))
-          .convert[String, String](utf8.toFunction)
+      val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+          topic, Seq(ktu.brokerAddress))
+        .convert[String, String](utf8.toFunction)
 
-        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-        Await.result(Future.collect(futures))
-        val records = tryReadAtLeastNRecords(10)
-        records should have size 10
-        records.zip(1 to 10).foreach { case (record, expectedValue) =>
-          record.key() shouldBe "key"
-          record.value() shouldBe expectedValue.toString
-        }
-      }
-        println("ended convert")
+      Await.result(Future.collect(futures))
+      val records = tryReadAtLeastNRecords(10)
+      records should have size 10
+      records.zip(1 to 10).foreach { case (record, expectedValue) =>
+        record.key() shouldBe "key"
+        record.value() shouldBe expectedValue.toString
       }
     }
-    /*
     "write messages to a kafka topic after having been filtered" in {
-      mut.synchronized {
-        println(s"started filtered thread id ${Thread.currentThread.getId()}")
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
-      for (i <- 1 to 100) {
-        println(s"run filtered $i")
-        val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
-            topic, Seq(ktu.brokerAddress))
-          .filter { case (k, v) => v.toInt % 2 == 0 }
+      val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
+          topic, Seq(ktu.brokerAddress))
+        .filter { case (k, v) => v.toInt % 2 == 0 }
 
-        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-        Await.result(Future.collect(futures))
-        val records = tryReadAtLeastNRecords(10)
-        records.size shouldBe 5
-        records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
-          record.key() shouldBe "key"
-          record.value() shouldBe expectedValue.toString
-        }
-        println("ended filtered")
-      }
+      Await.result(Future.collect(futures))
+      val records = tryReadAtLeastNRecords(10)
+      records.size shouldBe 5
+      records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
+        record.key() shouldBe "key"
+        record.value() shouldBe expectedValue.toString
       }
     }
-    */
   }
 }
