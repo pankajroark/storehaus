@@ -55,7 +55,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         println(s"retrying $i")
       }
       val records = consumer.poll(pollTimeoutMs).asScala
-      allRecords = allRecords ++ records.toList
+      allRecords = allRecords ++ records
       if (allRecords.size >= n) {
         return allRecords
       }
