@@ -32,7 +32,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
-  private val pollTimeoutMs = 60000
+  private val pollTimeoutMs = 1000
 
 
   override protected def beforeAll(): Unit = {
@@ -52,13 +52,28 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
   }
 
-  private def readAllRecords = {
+  private def readAllRecords(): List[ConsumerRecord[String, String]] = {
     var cont = true
     var allRecords = List.empty[ConsumerRecord[String, String]]
     while (cont) {
       val records = consumer.poll(pollTimeoutMs).asScala
-      allRecords ++= records
+      allRecords = allRecords ++ records.toList
+      println(records.size)
       cont = records.nonEmpty
+    }
+    println(s" all records size ${allRecords.size}")
+    allRecords
+  }
+
+  private def tryReadAtLeastNRecords(n: Int): List[ConsumerRecord[String, String]] = {
+    val tries = 3
+    var allRecords = List.empty[ConsumerRecord[String, String]]
+    for (_ <- 1 to tries) {
+      val records = consumer.poll(pollTimeoutMs).asScala
+      allRecords = allRecords ++ records.toList
+      if (allRecords.size >= n) {
+        return allRecords
+      }
     }
     allRecords
   }
@@ -75,7 +90,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
-      val records = readAllRecords
+      val records = tryReadAtLeastNRecords(10)
       records.size shouldBe 10
       records.zip(1 to 10).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
@@ -99,7 +114,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
         Await.result(Future.collect(futures))
-        val records = readAllRecords
+        val records = tryReadAtLeastNRecords(10)
         records should have size 10
         records.zip(1 to 10).foreach { case (record, expectedValue) =>
           record.key() shouldBe "key"
@@ -125,7 +140,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
         Await.result(Future.collect(futures))
-        val records = readAllRecords
+        val records = tryReadAtLeastNRecords(10)
         records.size shouldBe 5
         records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
           record.key() shouldBe "key"
