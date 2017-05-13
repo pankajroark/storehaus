@@ -74,7 +74,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
     "write messages to a kafka topic after having been converted" in {
       mut.synchronized {
-        println("started convert")
+        println(s"started convert: thread id ${Thread.currentThread.getId()}")
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
@@ -100,7 +100,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
     "write messages to a kafka topic after having been filtered" in {
       mut.synchronized {
-        println("started filtered")
+        println(s"started filtered thread id ${Thread.currentThread.getId()}")
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
