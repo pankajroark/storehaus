@@ -23,12 +23,7 @@ import org.scalatest.{Matchers, WordSpec, BeforeAndAfterAll}
 
 import scala.collection.JavaConverters._
 
-object KafkaSinkSpec {
-  private val mut = List(1)
-}
-
 class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
-  import KafkaSinkSpec._
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
@@ -88,6 +83,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       import com.twitter.bijection.StringCodec.utf8
+      for (i <- 1 to 500) {
       val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
           topic, Seq(ktu.brokerAddress))
         .convert[String, String](utf8.toFunction)
@@ -101,11 +97,13 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      }
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
+      for (i <- 1 to 500) {
       val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
           topic, Seq(ktu.brokerAddress))
         .filter { case (k, v) => v.toInt % 2 == 0 }
@@ -118,6 +116,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
+      }
       }
     }
   }
