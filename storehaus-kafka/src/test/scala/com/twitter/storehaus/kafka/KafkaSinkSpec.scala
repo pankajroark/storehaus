@@ -98,6 +98,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         println("ended convert")
       }
     }
+    /*
     "write messages to a kafka topic after having been filtered" in {
       mut.synchronized {
         println(s"started filtered thread id ${Thread.currentThread.getId()}")
@@ -123,5 +124,6 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       }
       }
     }
+    */
   }
 }
