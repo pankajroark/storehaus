@@ -17,7 +17,7 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.util.{Await, Future}
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
 import org.scalatest.{Matchers, WordSpec, BeforeAndAfterAll}
 
@@ -52,6 +52,17 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
   }
 
+  private def readAllRecords = {
+    var cont = true
+    var allRecords = List.empty[ConsumerRecord[String, String]]
+    while (cont) {
+      val records = consumer.poll(pollTimeoutMs).asScala
+      allRecords ++= records
+      cont = records.nonEmpty
+    }
+    allRecords
+  }
+
   "KafkaSink" should {
     "write messages to a kafka topic" in {
       mut.synchronized {
@@ -64,7 +75,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
+      val records = readAllRecords
       records.size shouldBe 10
       records.zip(1 to 10).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
@@ -88,7 +99,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
         Await.result(Future.collect(futures))
-        val records = consumer.poll(pollTimeoutMs).asScala
+        val records = readAllRecords
         records should have size 10
         records.zip(1 to 10).foreach { case (record, expectedValue) =>
           record.key() shouldBe "key"
@@ -114,7 +125,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
         Await.result(Future.collect(futures))
-        val records = consumer.poll(pollTimeoutMs).asScala
+        val records = readAllRecords
         records.size shouldBe 5
         records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
           record.key() shouldBe "key"
