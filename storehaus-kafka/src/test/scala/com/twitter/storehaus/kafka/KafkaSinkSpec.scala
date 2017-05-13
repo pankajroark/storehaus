@@ -50,8 +50,11 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private def tryReadAtLeastNRecords(n: Int): Array[ConsumerRecord[String, String]] = {
     var allRecords = Array.empty[ConsumerRecord[String, String]]
-    for (_ <- 1 to pollTries) {
+    for (i <- 1 to pollTries) {
       val records = consumer.poll(pollTimeoutMs).asScala
+      if (i > 1) {
+        println(s"retrying $i :: ${allRecords.size}")
+      }
       allRecords = allRecords ++ records.toList
       if (allRecords.size >= n) {
         return allRecords
@@ -83,6 +86,12 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       import com.twitter.bijection.StringCodec.utf8
+      var i = 0
+      while (i < 500) {
+        i += 1
+        if (i % 50 == 0) {
+          println(i)
+        }
         val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
             topic, Seq(ktu.brokerAddress))
           .convert[String, String](utf8.toFunction)
@@ -96,6 +105,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
           record.key() shouldBe "key"
           record.value() shouldBe expectedValue.toString
         }
+      }
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
@@ -104,6 +114,9 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       var i = 0
       while (i < 500) {
         i += 1
+        if (i % 50 == 0) {
+          println(i)
+        }
         val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
             topic, Seq(ktu.brokerAddress))
           .filter { case (k, v) => v.toInt % 2 == 0 }
@@ -111,7 +124,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
         Await.result(Future.collect(futures))
-        val records = tryReadAtLeastNRecords(10)
+        val records = tryReadAtLeastNRecords(5)
         records.size shouldBe 5
         records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
           record.key() shouldBe "key"
