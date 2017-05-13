@@ -84,19 +84,19 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       import com.twitter.bijection.StringCodec.utf8
       for (i <- 1 to 500) {
-      val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-          topic, Seq(ktu.brokerAddress))
-        .convert[String, String](utf8.toFunction)
+        val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+            topic, Seq(ktu.brokerAddress))
+          .convert[String, String](utf8.toFunction)
 
-      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-      Await.result(Future.collect(futures))
-      val records = tryReadAtLeastNRecords(10)
-      records should have size 10
-      records.zip(1 to 10).foreach { case (record, expectedValue) =>
-        record.key() shouldBe "key"
-        record.value() shouldBe expectedValue.toString
-      }
+        Await.result(Future.collect(futures))
+        val records = tryReadAtLeastNRecords(10)
+        records should have size 10
+        records.zip(1 to 10).foreach { case (record, expectedValue) =>
+          record.key() shouldBe "key"
+          record.value() shouldBe expectedValue.toString
+        }
       }
     }
     "write messages to a kafka topic after having been filtered" in {
@@ -104,19 +104,19 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       for (i <- 1 to 500) {
-      val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
-          topic, Seq(ktu.brokerAddress))
-        .filter { case (k, v) => v.toInt % 2 == 0 }
+        val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
+            topic, Seq(ktu.brokerAddress))
+          .filter { case (k, v) => v.toInt % 2 == 0 }
 
-      val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
+        val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
-      Await.result(Future.collect(futures))
-      val records = tryReadAtLeastNRecords(10)
-      records.size shouldBe 5
-      records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
-        record.key() shouldBe "key"
-        record.value() shouldBe expectedValue.toString
-      }
+        Await.result(Future.collect(futures))
+        val records = tryReadAtLeastNRecords(10)
+        records.size shouldBe 5
+        records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
+          record.key() shouldBe "key"
+          record.value() shouldBe expectedValue.toString
+        }
       }
     }
   }
