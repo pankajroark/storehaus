@@ -39,6 +39,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     ktu = new KafkaTestUtils
     ktu.setup()
     consumer = new KafkaConsumer[String, String](ktu.consumerProps)
+
   }
 
   override protected def afterAll(): Unit = {
