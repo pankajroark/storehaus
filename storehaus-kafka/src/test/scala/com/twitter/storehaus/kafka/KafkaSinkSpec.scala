@@ -33,13 +33,13 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
   private val pollTimeoutMs = 1000
+  private val pollTries = 10
 
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
     ktu.setup()
     consumer = new KafkaConsumer[String, String](ktu.consumerProps)
-
   }
 
   override protected def afterAll(): Unit = {
@@ -67,9 +67,8 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   private def tryReadAtLeastNRecords(n: Int): List[ConsumerRecord[String, String]] = {
-    val tries = 3
     var allRecords = List.empty[ConsumerRecord[String, String]]
-    for (i <- 1 to tries) {
+    for (i <- 1 to pollTries) {
       if (i > 1) {
         println("did not get enough records, trying again")
       }
