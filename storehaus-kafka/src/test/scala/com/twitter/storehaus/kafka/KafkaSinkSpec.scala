@@ -51,6 +51,9 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   private def tryReadAtLeastNRecords(n: Int): Array[ConsumerRecord[String, String]] = {
     var allRecords = Array.empty[ConsumerRecord[String, String]]
     for (i <- 1 to pollTries) {
+      if (i > 1) {
+        println(s"retrying $i")
+      }
       val records = consumer.poll(pollTimeoutMs).asScala
       allRecords = allRecords ++ records.toList
       if (allRecords.size >= n) {
