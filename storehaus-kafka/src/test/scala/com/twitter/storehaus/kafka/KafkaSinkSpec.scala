@@ -28,7 +28,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
   private val pollTimeoutMs = 1000
-  private val pollTries = 11
+  private val pollTries = 10
 
 
   override protected def beforeAll(): Unit = {
