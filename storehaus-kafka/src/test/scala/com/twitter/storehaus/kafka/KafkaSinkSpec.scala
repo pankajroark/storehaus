@@ -119,6 +119,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+
       consumer.unsubscribe()
     }
   }
