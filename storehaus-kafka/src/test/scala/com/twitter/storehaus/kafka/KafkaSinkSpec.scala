@@ -80,6 +80,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been converted" in {
       val topic = "topic-" + ktu.random
@@ -99,6 +100,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
@@ -117,6 +119,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
   }
 }
