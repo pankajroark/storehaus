@@ -109,7 +109,6 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       intercept[Exception] {
         Await.result(store.put(("testKey", "testValue")))
       }
-
       consumer.unsubscribe()
     }
   }
